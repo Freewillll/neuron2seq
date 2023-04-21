@@ -50,7 +50,7 @@ def trim_out_of_box(tree_orig, imgshape, keep_candidate_points=True):
     return tree
 
 
-def swc_to_forest(tree, imgshape, max_level=1, p_idx=-2):
+def swc_to_seq(tree, imgshape, max_level=1, p_idx=-2):
         pos_dict = {}
         poses_list = []
         labels_list = []
@@ -64,22 +64,22 @@ def swc_to_forest(tree, imgshape, max_level=1, p_idx=-2):
                 roots.append(leaf[0])
 
         def dfs(idx, level, child_dict, tree):
-            # 1 root, 2 branching point, 3 tip node, 4 boundary point, 5 other node
+            # 0 root, 1 branching point, 2 tip node, 3 boundary point, 4 other node
             leaf = pos_dict[idx]
             x, y, z, r = leaf[2:6]
-            tag = 5
+            tag = 4
             if idx not in child_dict:
                 *_, ib = leaf
                 if idx in roots:
-                    tag = 1
+                    tag = 0
                 elif ib == 1:
-                    tag = 3
+                    tag = 2
                     level += 1
                 elif ib == 0:
-                    tag = 4
+                    tag = 3
                     level += 1
 
-                if tag == 1 or tag == 3 or tag == 4:
+                if tag == 0 or tag == 2 or tag == 3:
                     level_dict[level].append(idx)
                 if idx in roots:
                     tree.create_node(tag=tag, identifier=idx, data=(z, y, x))
@@ -89,14 +89,14 @@ def swc_to_forest(tree, imgshape, max_level=1, p_idx=-2):
             else:
                 cnum = len(child_dict[idx])
                 if idx in roots:
-                    tag = 1
+                    tag = 0
                 elif cnum == 1:
-                    tag = 5
+                    tag = 4
                 elif cnum >= 2:
-                    tag = 2
+                    tag = 1
                     level += 1
 
-                if tag == 1 or tag == 2:
+                if tag == 0 or tag == 1:
                     level_dict[level].append(idx)
                 if idx in roots:
                     tree.create_node(tag=tag, identifier=idx, data=(z, y, x))
@@ -107,6 +107,7 @@ def swc_to_forest(tree, imgshape, max_level=1, p_idx=-2):
 
         Trees = []
         child_dict = get_child_dict(tree, p_idx_in_leaf=p_idx)
+
         for idx in roots:
             tree = Tree()
             poses = []
@@ -118,19 +119,22 @@ def swc_to_forest(tree, imgshape, max_level=1, p_idx=-2):
                     for idx in level_dict[key]:
                         pos = []
                         node = tree.get_node(idx)
-                        if node.tag == 4:
+                        if node.tag == 3:
                             par = node._predecessor[node._initial_tree_id]
                             par_node = tree.get_node(par)
                             pos = par_node.data
                             label = node.tag
+                        elif node.tag == 0:
+                            pos = node.data
+                            label = node.tag
+                            idx, _, x, y, z, *_, par, ib = pos_dict[idx]
+                            if ib == 0:
+                                pos = tree.children(idx)[0].data
                         else:
                             pos = node.data
                             label = node.tag
                             
                         z, y, x = pos
-                        x = x / imgshape[-1]
-                        y = y / imgshape[-2]
-                        z = z / imgshape[0]
                         poses.append([z, y, x])
                         labels.append(label)
 
@@ -153,8 +157,8 @@ if __name__ == '__main__':
     swcfile = '/PBshare/SEU-ALLEN/Users/Gaoyu/Neuron_dataset/Task002_ntt_256/17302_18816.00_39212.03_2416.26.swc'
     tree = parse_swc(swcfile)
     sz = 50
-    sy = 100
-    sx = 100
+    sy = 50
+    sx = 50
     new_tree = []
     for leaf in tree:
         idx, type_, x, y, z, r, p = leaf
@@ -164,7 +168,7 @@ if __name__ == '__main__':
         new_tree.append((idx, type_, x, y, z, r, p))
     tree = trim_out_of_box(new_tree, imgshape=[32, 64, 64])
     print(len(tree))
-    poses, labels = swc_to_forest(tree, imgshape=[32,64,64])
+    poses, labels = swc_to_seq(tree, imgshape=[32,64,64])
     # print(seq_list)
     print(poses, labels)
 

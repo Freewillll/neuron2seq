@@ -4,9 +4,10 @@ class CFG:
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    max_len = 300
+    max_len = 15
     img_size = 384
     num_bins = img_size
+    pad_idx = -1
     
     batch_size = 16
     epochs = 25

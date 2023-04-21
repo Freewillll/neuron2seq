@@ -1,5 +1,10 @@
 import numpy as np
 import torch
+import os, sys
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
 
 class Tokenizer:
     def __init__(self, num_classes: int, num_bins: int, depth: int, height: int, width: int, max_len=500):
@@ -31,6 +36,7 @@ class Tokenizer:
     def __call__(self, labels: list, poses: list, shuffle=True):
         assert len(labels) == len(poses), "labels and poses must have the same length"
         poses = np.array(poses)
+        poses = np.clip(poses, 0, [self.depth-1, self.height-1, self.width-1])
         labels = np.array(labels)
         labels += self.num_bins
         labels = labels.astype('int')[:self.max_len]
