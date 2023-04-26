@@ -81,10 +81,10 @@ if __name__ == '__main__':
     img = img.to(args.device)
     seq = seq.to(args.device)
     
-    preds = model(img, seq)
-    preds = torch.argmax(preds, dim=-1)
+    # preds = model(img, seq)
+    # preds = torch.argmax(preds, dim=-1)
 
-    # preds = generate(model, img, seq, 10, 0, 1, args)
+    preds = generate(model, img, seq, 10, 0, 1, args)
 
     print(preds)
     

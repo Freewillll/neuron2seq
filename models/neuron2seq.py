@@ -138,8 +138,8 @@ class Neu2seq(nn.Module):
         tgt_mask, tgt_padding_mask = create_mask(tgt, self.pad_idx)
         tgt_embedding = self.embedding(tgt)
 
-        # print(f'tgt_mask: {tgt_mask}')
-        # print(f'tgt_padding_mask: {tgt_padding_mask}')
+        print(f'tgt_mask: {tgt_mask}')
+        print(f'tgt_padding_mask: {tgt_padding_mask}')
 
         seq_pos = posemb_sincos_1d(tgt_embedding)
 
