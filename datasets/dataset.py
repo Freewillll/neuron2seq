@@ -121,6 +121,27 @@ def get_loaders(args, phase, tokenizer):
     return loader, dset_iter
 
 
+class DatasetTest(tudata.Dataset):
+    def __init__(self, img_paths, marker_paths, imgshape, tokenizer):
+        self.img_paths = img_paths
+        self.marker_paths = marker_paths
+        self.tokenizer = tokenizer
+        self.augment = InstanceAugmentation(p=0.2, imgshape=imgshape, phase='test')
+
+    def __getitem__(self, idx):
+        img_path = self.img_paths[idx]
+        img_name = os.path.split(img_path)[-1]
+        marker_path = self.marker_paths[idx]
+        img = load_image(img_path)
+        poses, labels = read_marker(marker_path)
+        seqs = self.tokenizer(labels, poses, False)
+        seqs = torch.LongTensor(seqs)
+        return torch.from_numpy(img.astype(np.float32)), seqs, img_name
+
+    def __len__(self):
+        return len(self.img_paths)
+
+
 if __name__ == '__main__':
 
     import skimage.morphology as morphology
@@ -130,7 +151,6 @@ if __name__ == '__main__':
     # import matplotlib.pyplot as plt
     from utils.image_util import *
     from datasets.tokenizer import Tokenizer
-    from models.config import CFG
     # from datasets.mip import *
     # from train import *
 
@@ -156,22 +176,4 @@ if __name__ == '__main__':
         break
         # print(targets.shape)
         # save_image_in_training(imgfiles, img, seq, cls_, pred=None, phase='train', epoch=1, idx=0)
-
-        
-
-
-    # img, lab, cls_, *_ = dataset.pull_item(idx)
-    # img = unnormalize_normal(img.numpy()).astype(np.uint8)
-    # pos = util.pos_unnormalize(lab[..., :3], img.shape[1:])
-    # print(pos)
-    # print(cls_)
-    # lab_image = draw_lab(pos, cls_, img)
-
-    # save_image('test.v3draw', lab_image)
-    # lab_image = lab_image[1]
-    # print(lab_image.shape)
-    # print(lab_image.dtype)
-    # plt.imshow(cv.addWeighted(convert_color_w(img_contrast(np.max(img[0], axis=0), contrast=5.0)), 0.5,
-    #            convert_color_r(np.max(lab_image, axis=0)), 0.5, 0))
-    # plt.savefig('test.png')
 

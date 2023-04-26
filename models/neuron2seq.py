@@ -79,18 +79,6 @@ class ResidualBlock(nn.Module):
             out = self.left(x)
         out = F.leaky_relu(out, inplace=True)
         return out
-
-
-# class Encoder(nn.Module):
-#     def __init__(self, model_name='deit3_small_patch16_224_in21ft1k', pretrained=False, out_dim=256):
-#         super().__init__()
-#         self.model = timm.create_model(
-#             model_name, num_classes=0, global_pool='', pretrained=pretrained)
-#         self.bottleneck = nn.AdaptiveAvgPool1d(out_dim)
-
-#     def forward(self, x):
-#         features = self.model(x)
-#         return self.bottleneck(features[:, 1:])
     
 
 class Neu2seq(nn.Module):
@@ -133,7 +121,6 @@ class Neu2seq(nn.Module):
         self.downs = nn.ModuleList(self.downs)
         self.class_head = nn.Linear(dim, vocab_size)
 
-
     def forward(self, img, tgt):
         """
         tgt: shape(B, L, D)
@@ -161,6 +148,37 @@ class Neu2seq(nn.Module):
         
         out= self.class_head(hs)
         return out
+    
+    def predict(self, img, tgt, args):
+        length = tgt.size(1)
+        padding = torch.ones(tgt.size(0), args.max_seq_len-length-1).fill_(self.pad_idx).long().to(tgt.device)
+        tgt = torch.cat([tgt, padding], dim=1)
+
+        print(f'tgt: {tgt}')
+
+        assert img.ndim == 5
+        img = self.pre_layer(img)
+        ndown = len(self.downs)
+        for i in range(ndown):
+            img = self.downs[i](img)
+
+        img = self.input_proj(img)
+        pos = posemb_sincos_3d(img)
+
+        tgt_mask, tgt_padding_mask = create_mask(tgt, self.pad_idx)
+        tgt_embedding = self.embedding(tgt)
+        
+        seq_pos = posemb_sincos_1d(tgt_embedding)
+        
+        hs = self.transformer(src=img, tgt=tgt_embedding, pos_embed=pos, seq_pos=seq_pos, 
+                              tgt_padding_mask=tgt_padding_mask, tgt_mask=tgt_mask)[0][0]
+        
+        out= self.class_head(hs)
+
+        test = torch.argmax(out, dim=-1)
+        print(f'test: {test}')
+
+        return out[:, length-1, :]
     
 
 if __name__ == '__main__':

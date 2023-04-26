@@ -66,8 +66,10 @@ parser.add_argument('--deterministic', action='store_true',
                     help='run in deterministic mode')
 parser.add_argument('--val_frequency', default=20, type=int,
                     help='frequency of val')
-parser.add_argument('--print_frequency', default=5, type=int,
-                    help='frequency of information logging')
+parser.add_argument('--debug_frequency', default=5, type=int,
+                    help='num of saving debug_image in one epoch')
+parser.add_argument('--num_debug_save', default=5, type=int,
+                    help='frequency of saving debug_image')
 parser.add_argument('--checkpoint', default='', type=str,
                     help='Saved checkpoint')
 parser.add_argument('--evaluation', action='store_true',
@@ -84,6 +86,8 @@ if __name__ == '__main__':
     seed_everything(args.seed)
     args.image_shape = tuple(map(int, args.image_shape.split(',')))
     args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if not os.path.exists(args.save_folder):
+        os.mkdir(args.save_folder)
     
     tokenizer = Tokenizer(num_classes=args.num_classes, num_bins=args.num_bins, depth=args.image_shape[0],
                           height=args.image_shape[1], width=args.image_shape[2], max_len=args.node_len)
@@ -101,9 +105,10 @@ if __name__ == '__main__':
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     num_training_steps = args.epochs * (len(train_loader.dataset) // args.batch_size)
+
     num_warmup_steps = int(0.05 * num_training_steps)
     lr_scheduler = WarmupLinearSchedule(optimizer, num_warmup_steps, num_training_steps)
     criterion = nn.CrossEntropyLoss(ignore_index=args.pad_idx)
     
-    train_eval(model, train_loader, val_loader, criterion, optimizer, lr_scheduler, step='batch', logger=None, args=args)
+    train_eval(model, tokenizer, train_loader, val_loader, criterion, optimizer, lr_scheduler, step='batch', logger=None, args=args)
     

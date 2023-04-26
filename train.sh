@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exp_folder="exps/exps001"
+exp_folder="exps/exps003"
 mkdir -p $exp_folder
 
 CUDA_VISIBLE_DEVICES=0 nohup \
@@ -8,8 +8,10 @@ python -u main.py \
     --deterministic \
     --lr 1e-4 \
     --weight_decay 1e-4 \
-    --epochs 10 \
+    --epochs 200 \
     --val_frequency 10 \
+    --debug_frequency 10 \
+    --num_debug_save 5 \
     --max_grad_norm 1.0 \
     --image_shape '32,64,64' \
     --node_len 3 \

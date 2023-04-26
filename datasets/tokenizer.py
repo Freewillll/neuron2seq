@@ -1,9 +1,14 @@
 import numpy as np
 import torch
 import os, sys
+
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
+
+import skimage.morphology as morphology
+
+from file_io import *
 
 
 class Tokenizer:
@@ -63,20 +68,23 @@ class Tokenizer:
 
         return tokenized    
     
-    def decode(self, tokens: torch.tensor):
+    def decode(self, tokens):
         """
         toekns: torch.LongTensor with shape [L]
         """
         mask = tokens != self.PAD_code
         tokens = tokens[mask]
-        tokens = tokens[1:-1]
+        token_list = tokens.tolist()
+        end = token_list.index(self.EOS_code)
+        tokens = tokens[1:end]
+
         assert len(tokens) % 4 == 0, "invalid tokens"
 
         labels = []
         poses = []
-        for i in range(4, len(tokens)+1, 5):
+        for i in range(3, len(tokens)+1, 4):
             label = tokens[i]
-            bbox = tokens[i-4: i]
+            bbox = tokens[i-3: i]
             labels.append(int(label))
             poses.append([int(item) for item in bbox])
         labels = np.array(labels) - self.num_bins
@@ -87,4 +95,29 @@ class Tokenizer:
         poses[:, 1] = poses[:, 1] * self.height
         poses[:, 2] = poses[:, 2] * self.width
         
-        return labels, poses
+        return labels, poses.astype('int32')
+    
+    @torch.no_grad()
+    def visualization(self, img, token):
+        img = np.repeat(img, 3, axis=0)
+        img[0, :, :, :] = 0
+        img[2, :, :, :] = 0
+
+        labels, poses = self.decode(token)
+
+        poses = np.clip(poses, 0, list(img[0].shape))
+
+        for idx, node in enumerate(poses):
+            if labels[idx] == 0: # root white
+                img[:, node[0], node[1], node[2]] = 255
+            elif labels[idx] == 1: # branching point yellow
+                img[0, node[0], node[1], node[2]] = 255
+            elif labels[idx] == 2: # tip blue
+                img[2, node[0], node[1], node[2]] = 255
+            elif labels[idx] == 3: #boundary blue
+                img[2, node[0], node[1], node[2]] = 255
+
+        selem = np.ones((1,1,3,3), dtype=np.uint8)
+        img = morphology.dilation(img, selem)
+
+        return img
