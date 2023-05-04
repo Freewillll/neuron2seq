@@ -206,7 +206,7 @@ class TransformerDecoderLayer(nn.Module):
                      pos: Optional[Tensor] = None,
                      seq_pos: Optional[Tensor] = None):
         q = k = self.with_pos_embed(tgt, seq_pos)
-        print(f'tgt_mask in attention: {tgt_mask}')
+        # print(f'tgt_mask in attention: {tgt_mask}')
         tgt2 = self.self_attn(q, k, value=tgt, attn_mask=tgt_mask,
                               key_padding_mask=tgt_key_padding_mask)[0]
         tgt = tgt + self.dropout1(tgt2)

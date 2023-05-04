@@ -96,7 +96,7 @@ if __name__ == '__main__':
     val_loader, _ = get_loaders(args, 'val', tokenizer)
     print(f'   {args}')
 
-    model = Neu2seq(in_channels=1, base_channels=args.base_channels, encoder_depth=args.enc_layers, 
+    model = Neu2seq_test(in_channels=1, base_channels=args.base_channels, encoder_depth=args.enc_layers, 
                     decoder_depth=args.dec_layers, down_kernel_list=args.down_kernel_list, stride_list=args.stride_list, dim=args.hidden_dim,
                     heads=args.heads, dropout=args.dropout, vocab_size=tokenizer.vocab_size, pad_idx=args.pad_idx)
     

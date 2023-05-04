@@ -34,8 +34,8 @@ def worker_init_fn(worker_id):
 def generate_square_subsequent_mask(sz, device, start_pos):
     mask = (torch.triu(torch.ones((sz, sz), device=device), start_pos)
             == 1)
-    mask = mask.float().masked_fill(mask == 1, float(
-        '-inf')).masked_fill(mask == 0, float(0.0))
+    # mask = mask.float().masked_fill(mask == 1, float(
+    #     '-inf')).masked_fill(mask == 0, float(0.0))
     return mask
 
 
@@ -66,7 +66,7 @@ def read_marker(marker_file):
             z = float(z)
             r = float(r)
             g = float(g)
-            b = float(b)
+            b = float(b)  
             type_ = 0
             if r:
                 type_ = 1

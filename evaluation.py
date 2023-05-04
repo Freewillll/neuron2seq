@@ -14,8 +14,8 @@ from file_io import *
 parser = argparse.ArgumentParser("Infer single image")
 # data
 parser.add_argument("--image", type=str, help="Path to image", default="./test_data/17109_4332_crop.v3draw")
-parser.add_argument("--marker", type=str, help="Path to marker file", default="./test_data/17109_4332_crop_3.marker")
-parser.add_argument('--checkpoint', default='./exps/exps003/debug/best_valid_loss.pth', type=str, help='Saved checkpoint')
+parser.add_argument("--marker", type=str, help="Path to marker file", default="./test_data/17109_4332_crop.marker")
+parser.add_argument('--checkpoint', default='./exps/exps007/debug/final.pth', type=str, help='Saved checkpoint')
 parser.add_argument('--steps', default=15, type=int, help="Generate steps nums")
 
 #model
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     marker_paths = [args.marker]
     test_dataset = DatasetTest(img_paths, marker_paths, args.image_shape, tokenizer)
 
-    model = Neu2seq(in_channels=1, base_channels=args.base_channels, encoder_depth=args.enc_layers, 
+    model = Neu2seq_test(in_channels=1, base_channels=args.base_channels, encoder_depth=args.enc_layers, 
                 decoder_depth=args.dec_layers, down_kernel_list=args.down_kernel_list, stride_list=args.stride_list, dim=args.hidden_dim,
                 heads=args.heads, dropout=args.dropout, vocab_size=tokenizer.vocab_size, pad_idx=args.pad_idx)
     
@@ -73,10 +73,10 @@ if __name__ == '__main__':
     model.eval()
 
     img, seq, _ = test_dataset[0]
-    # seq = seq[:5]
+    seq = seq[:5]
     img = img.unsqueeze(0)
     seq = seq.unsqueeze(0)
-    print(seq)
+    print(f'seq: {seq}')
 
     img = img.to(args.device)
     seq = seq.to(args.device)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     preds = generate(model, img, seq, 10, 0, 1, args)
 
-    print(preds)
+    print(f'pred: {preds}')
     
 
 

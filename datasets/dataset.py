@@ -108,12 +108,10 @@ def collate_fn(batch, max_len, pad_idx):
 
 def get_loaders(args, phase, tokenizer):
     dset = GenericDataset(args.data_file, tokenizer, phase=phase, imgshape=args.image_shape)
-    # distributedSampler
-    sampler = RandomSampler(dset)
+    # sampler = RandomSampler(dset)
     loader = tudata.DataLoader(dset, args.batch_size,
                                num_workers=args.num_workers,
-                               shuffle=False, pin_memory=True,
-                               sampler=sampler,
+                               shuffle=True, pin_memory=True,
                                drop_last=True,
                                collate_fn=partial(collate_fn, max_len=0, pad_idx=tokenizer.PAD_code),
                                worker_init_fn=worker_init_fn)
