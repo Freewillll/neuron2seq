@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import torch
 import os, sys
+import numpy as np
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -19,15 +20,44 @@ def train_epoch(model, tokenizer, train_loader, optimizer, lr_scheduler, criteri
     for img, seq, img_files, _ in tqdm_object:
         img, seq = img.to(args.device, non_blocking=True), seq.to(args.device, non_blocking=True)
 
-        padding = torch.ones(seq.size(0), 4).fill_(args.pad_idx).long().to(seq.device)
-        seq = torch.cat([seq, padding], dim=1)
+        # padding = torch.ones(seq.size(0), 4).fill_(args.pad_idx).long().to(seq.device)
+        # seq = torch.cat([seq, padding], dim=1)
         
-        seq_input = seq[:, :-5]
-        seq_expected = seq[:, 5:]
+        seq_input = seq[:, :-1]
+        seq_expected = seq[:, 1:]
+
         
         preds = model(img, seq_input)
+        # preds = preds[:, 4:]
 
-        loss = criterion(preds.reshape(-1, preds.shape[-1]), seq_expected.reshape(-1))
+        loss = criterion(preds.reshape(-1, preds.shape[-1]), seq_expected.reshape(-1))        # zzh
+        # pos_input = seq_expected[:, :3]
+        # pos_pred = torch.argmax(preds, dim=-1).cpu()
+
+        # p = 0
+        # l_dist = 0
+        # l_gray = 0
+        # img_sz = max(img.shape[2:])
+        # count = 1
+        # while p + 3 < pos_pred.shape[-1]:
+        #     pred_pt = pos_pred[:, p:p+3]
+        #     flag = torch.all(pred_pt < 64, 1)
+        #     pred_coord = pred_pt[flag].to(args.device, non_blocking=True)
+        #     input_coord = pos_input[flag].to(args.device, non_blocking=True)
+        #     c = torch.count_nonzero(flag)
+        #     c_ = img.shape[0] - c
+        #     l_dist += torch.sum(torch.pow(1 - torch.pow(torch.sum(torch.pow(pred_coord - input_coord, 2), 1), 0.5) / img_sz, 2)) + c_
+        #     pred_coord = torch.transpose(pred_coord, 0, 1)
+        #     int_z = (pred_coord[0] / 2).type(torch.long)
+        #     int_coord = pred_coord.type(torch.long)
+        #     pix = img[torch.argwhere(flag).reshape(-1), 0, int_z, int_coord[1], int_coord[2]].reshape(-1).to(args.device, non_blocking=True)
+        #     l_gray += torch.sum(torch.pow(1 - pix, 2)) + c_
+        #     count += c
+        #     p += 4
+        # l_dist /= count
+        # l_gray /= count
+
+        # loss = criterion(preds.reshape(-1, preds.shape[-1]), seq_expected.reshape(-1)) + 0.1 * l_dist + 0.1 * l_gray
         
         optimizer.zero_grad()
         loss.backward()
@@ -46,7 +76,7 @@ def train_epoch(model, tokenizer, train_loader, optimizer, lr_scheduler, criteri
         if debug:
             if saved < args.num_debug_save:
                 saved += 1
-                save_image_debug(tokenizer, img_files, img, seq, preds[:, :-3], epoch, 'train', 0, args)
+                save_image_debug(tokenizer, img_files, img, seq, preds, epoch, 'train', 0, args)
 
     return loss_meter.avg
 
@@ -62,11 +92,11 @@ def valid_epoch(model, tokenizer, valid_loader, criterion, epoch, args, debug):
         for img, seq, img_files, _ in tqdm_object:
             img, seq = img.to(args.device, non_blocking=True), seq.to(args.device, non_blocking=True)
 
-            padding = torch.ones(seq.size(0), 4).fill_(args.pad_idx).long().to(seq.device)
-            seq = torch.cat([seq, padding], dim=1)
+            # padding = torch.ones(seq.size(0), 4).fill_(args.pad_idx).long().to(seq.device)
+            # seq = torch.cat([seq, padding], dim=1)
             
-            seq_input = seq[:, :-5]
-            seq_expected = seq[:, 5:]
+            seq_input = seq[:, :-1]
+            seq_expected = seq[:, 1:]
 
             preds = model(img, seq_input)
             
@@ -79,7 +109,7 @@ def valid_epoch(model, tokenizer, valid_loader, criterion, epoch, args, debug):
             if debug:
                 if saved < args.num_debug_save:
                     saved += 1
-                    save_image_debug(tokenizer, img_files, img, seq, preds[:, :-3], epoch, 'val', 0, args)
+                    save_image_debug(tokenizer, img_files, img, seq, preds, epoch, 'val', 0, args)
     
     return loss_meter.avg
 

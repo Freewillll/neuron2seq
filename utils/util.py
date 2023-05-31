@@ -32,10 +32,11 @@ def worker_init_fn(worker_id):
 
 
 def generate_square_subsequent_mask(sz, device, start_pos):
-    mask = (torch.triu(torch.ones((sz, sz), device=device), start_pos)
+    mask = (torch.triu(torch.ones((sz, sz), device=device), 1)
             == 1)
-    # mask = mask.float().masked_fill(mask == 1, float(
-    #     '-inf')).masked_fill(mask == 0, float(0.0))
+    mask[:, :start_pos] = 0
+    mask = mask.float().masked_fill(mask == 1, float(
+        '-inf')).masked_fill(mask == 0, float(0.0))
     return mask
 
 
@@ -151,9 +152,12 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
 
     img = (unnormalize_normal(img[idx].cpu().numpy())).astype(np.uint8)
     token = tokens[idx].clone().cpu().numpy()
-    start = token[:5]
+    start = token[:1]
     print(f'lab: {token}')
-    img_lab = tokenizer.visualization(img[:], token)
+    img_lab, flag = tokenizer.visualization(img[:], token)
+    
+    if flag == False:
+        return  
     
     if phase == 'train':
         out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.v3draw'
@@ -166,7 +170,10 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
         pred = torch.argmax(preds[idx], dim=-1).clone().cpu().numpy()
         pred = np.concatenate([start, pred], axis=0)
         print(f'pred: {pred}')
-        img_pred = tokenizer.visualization(img, pred)
+        img_pred, flag = tokenizer.visualization(img, pred)
+
+        if flag == False:
+            return 
 
         if phase == 'train':
             out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.v3draw'

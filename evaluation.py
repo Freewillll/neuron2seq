@@ -13,9 +13,9 @@ from file_io import *
 
 parser = argparse.ArgumentParser("Infer single image")
 # data
-parser.add_argument("--image", type=str, help="Path to image", default="./test_data/17109_4332_crop.v3draw")
-parser.add_argument("--marker", type=str, help="Path to marker file", default="./test_data/17109_4332_crop.marker")
-parser.add_argument('--checkpoint', default='./exps/exps007/debug/final.pth', type=str, help='Saved checkpoint')
+parser.add_argument("--image", type=str, help="Path to image", default="./test_data/18869_8933_crop.v3draw")
+parser.add_argument("--marker", type=str, help="Path to marker file", default="./test_data/18869_8933_crop.marker")
+parser.add_argument('--checkpoint', default='./exps/exps015/debug/final.pth', type=str, help='Saved checkpoint')
 parser.add_argument('--steps', default=15, type=int, help="Generate steps nums")
 
 #model

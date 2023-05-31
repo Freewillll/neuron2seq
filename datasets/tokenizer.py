@@ -75,10 +75,14 @@ class Tokenizer:
         mask = tokens != self.PAD_code
         tokens = tokens[mask]
         token_list = tokens.tolist()
-        end = token_list.index(self.EOS_code)
-        tokens = tokens[1:end]
+        if self.EOS_code in token_list:
+            end = token_list.index(self.EOS_code)
+            tokens = tokens[1:end]
+        else:
+            return None, None, False
 
-        assert len(tokens) % 4 == 0, "invalid tokens"
+        if len(tokens) % 4 != 0:
+            return None, None, False
 
         labels = []
         poses = []
@@ -95,7 +99,7 @@ class Tokenizer:
         poses[:, 1] = poses[:, 1] * self.height
         poses[:, 2] = poses[:, 2] * self.width
         
-        return labels, poses.astype('int32')
+        return labels, poses.astype('int32'), True
     
     @torch.no_grad()
     def visualization(self, img, token):
@@ -103,9 +107,12 @@ class Tokenizer:
         img[0, :, :, :] = 0
         img[2, :, :, :] = 0
 
-        labels, poses = self.decode(token)
-
-        poses = np.clip(poses, 0, list(img[0].shape))
+        labels, poses, flag = self.decode(token)
+        if flag == False:
+            return None, False
+        max_boundary = list(img[0].shape)
+        max_boundary = [*map(lambda x: x - 1, max_boundary)]
+        poses = np.clip(poses, 0, max_boundary)
 
         for idx, node in enumerate(poses):
             if labels[idx] == 0: # root white
@@ -120,4 +127,4 @@ class Tokenizer:
         selem = np.ones((1,1,3,3), dtype=np.uint8)
         img = morphology.dilation(img, selem)
 
-        return img
+        return img, True

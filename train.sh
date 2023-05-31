@@ -1,14 +1,14 @@
 #!/bin/bash
 
-exp_folder="exps/exps007"
+exp_folder="exps/exps016"
 mkdir -p $exp_folder
 
-CUDA_VISIBLE_DEVICES=0 nohup \
+CUDA_VISIBLE_DEVICES=1 nohup \
 python -u main.py \
     --deterministic \
     --lr 1e-4 \
     --weight_decay 1e-4 \
-    --epochs 30 \
+    --epochs 50 \
     --val_frequency 10 \
     --debug_frequency 10 \
     --num_debug_save 5 \
