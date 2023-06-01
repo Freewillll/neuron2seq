@@ -81,7 +81,7 @@ class Tokenizer:
         else:
             return None, None, False
 
-        if len(tokens) % 4 != 0:
+        if len(tokens) % 4 != 0 or len(tokens) == 0:
             return None, None, False
 
         labels = []

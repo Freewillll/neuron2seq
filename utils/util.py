@@ -15,6 +15,7 @@ sys.path.append(parent)
 from utils.image_util import unnormalize_normal
 from path_util import *
 from file_io import *
+from image_utils import get_mip_image
 
 
 def seed_everything(seed=1234):
@@ -103,6 +104,20 @@ def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group["lr"]
     
+class WarmupConstantSchedule(LambdaLR):
+    """ Linear warmup and then constant.
+        Linearly increases learning rate schedule from 0 to 1 over `warmup_steps` training steps.
+        Keeps learning rate schedule equal to 1. after warmup_steps.
+    """
+    def __init__(self, optimizer, warmup_steps, last_epoch=-1):
+        self.warmup_steps = warmup_steps
+        super(WarmupConstantSchedule, self).__init__(optimizer, self.lr_lambda, last_epoch=last_epoch)
+
+    def lr_lambda(self, step):
+        if step < self.warmup_steps:
+            return float(step) / float(max(1.0, self.warmup_steps))
+        return 1.
+
 
 class WarmupLinearSchedule(LambdaLR):
     """ Linear warmup and then linear decay.
@@ -141,7 +156,7 @@ class WarmupCosineSchedule(LambdaLR):
     
 
 @torch.no_grad()
-def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx, args): 
+def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx, args, mip=True): 
     """
         Image Shape: b, c, z, y, x
         Tokens Shape: b, l
@@ -159,28 +174,41 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
     if flag == False:
         return  
     
-    if phase == 'train':
-        out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.v3draw'
+    if mip:
+        fmt = 'png'
+        img_save = get_mip_image(img_lab)
     else:
-        out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.v3draw'
+        fmt = 'v3draw'
+        img_save = img_lab
+
+    if phase == 'train':
+        out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.{fmt}'
+    else:
+        out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.{fmt}'
         
-    save_image(os.path.join(args.save_folder, out_lab_file), img_lab)
+    save_image(os.path.join(args.save_folder, out_lab_file), img_save)
         
     if preds != None:
         pred = torch.argmax(preds[idx], dim=-1).clone().cpu().numpy()
         pred = np.concatenate([start, pred], axis=0)
         print(f'pred: {pred}')
-        img_pred, flag = tokenizer.visualization(img, pred)
+        img_pred, flag = tokenizer.visualization(img[:], pred)
+        #img_pred, flag = tokenizer.visualization(img[:], token)
 
         if flag == False:
             return 
 
-        if phase == 'train':
-            out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.v3draw'
+        if mip:
+            img_save = get_mip_image(img_pred)
         else:
-            out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.v3draw'
+            img_save = img_pred
 
-        save_image(os.path.join(args.save_folder, out_pred_file), img_pred)
+        if phase == 'train':
+            out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.{fmt}'
+        else:
+            out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.{fmt}'
+
+        save_image(os.path.join(args.save_folder, out_pred_file), img_save)
 
 
 @torch.no_grad()

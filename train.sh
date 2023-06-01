@@ -10,7 +10,7 @@ python -u main.py \
     --weight_decay 1e-4 \
     --epochs 50 \
     --val_frequency 10 \
-    --debug_frequency 10 \
+    --debug_frequency 1 \
     --num_debug_save 5 \
     --max_grad_norm 1.0 \
     --image_shape '32,64,64' \
@@ -20,5 +20,5 @@ python -u main.py \
     --batch_size 16 \
     --seed 1025 \
     --save_folder ${exp_folder}/debug \
-    --data_file '/PBshare/SEU-ALLEN/Users/Gaoyu/Neuron_dataset/Task002_ntt_256/data_splits.pkl' \
+    --data_file '/home/lyf/Research/auto_trace/neuron2seq/data/Task002_ntt_256/debug_nsample16.pkl' \
     > ${exp_folder}/train.log &

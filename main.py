@@ -107,7 +107,8 @@ if __name__ == '__main__':
     num_training_steps = args.epochs * (len(train_loader.dataset) // args.batch_size)
 
     num_warmup_steps = int(0.05 * num_training_steps)
-    lr_scheduler = WarmupLinearSchedule(optimizer, num_warmup_steps, num_training_steps)
+    #lr_scheduler = WarmupLinearSchedule(optimizer, num_warmup_steps, num_training_steps)
+    lr_scheduler = WarmupConstantSchedule(optimizer, num_warmup_steps)
     criterion = nn.CrossEntropyLoss(ignore_index=args.pad_idx)
     
     train_eval(model, tokenizer, train_loader, val_loader, criterion, optimizer, lr_scheduler, step='batch', logger=None, args=args)
