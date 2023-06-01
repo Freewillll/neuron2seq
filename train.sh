@@ -8,9 +8,9 @@ python -u main.py \
     --deterministic \
     --lr 1e-4 \
     --weight_decay 1e-4 \
-    --epochs 50 \
-    --val_frequency 10 \
-    --debug_frequency 1 \
+    --epochs 1000 \
+    --val_frequency 2 \
+    --debug_frequency 2 \
     --num_debug_save 5 \
     --max_grad_norm 1.0 \
     --image_shape '32,64,64' \

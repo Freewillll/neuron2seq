@@ -176,17 +176,17 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
     
     if mip:
         fmt = 'png'
-        img_save = get_mip_image(img_lab)
+        img_lab_save = get_mip_image(img_lab, 1, mode='MAX')
     else:
         fmt = 'v3draw'
-        img_save = img_lab
+        img_lab_save = img_lab
 
     if phase == 'train':
         out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.{fmt}'
     else:
         out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.{fmt}'
         
-    save_image(os.path.join(args.save_folder, out_lab_file), img_save)
+    #save_image(os.path.join(args.save_folder, out_lab_file), img_lab_save)
         
     if preds != None:
         pred = torch.argmax(preds[idx], dim=-1).clone().cpu().numpy()
@@ -199,15 +199,21 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
             return 
 
         if mip:
-            img_save = get_mip_image(img_pred)
+            img_pred_save = get_mip_image(img_pred, 1, mode='MAX')
+            img_orig = np.repeat(get_mip_image(img, 1, mode='MAX'), 3, axis=0)
         else:
-            img_save = img_pred
+            img_pred_save = img_pred
+            img_orig = np.repeat(img, 3, axis=0)
 
         if phase == 'train':
             out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.{fmt}'
         else:
             out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.{fmt}'
 
+        # also original image
+        sx = img_lab_save.shape[-1]
+        img_save = np.hstack((img_orig.reshape(-1,sx), img_lab_save.reshape(-1,sx), 
+                              img_pred_save.reshape(-1,sx))).reshape(3,-1,3*sx)
         save_image(os.path.join(args.save_folder, out_pred_file), img_save)
 
 
