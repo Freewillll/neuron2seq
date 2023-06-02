@@ -168,7 +168,7 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
     img = (unnormalize_normal(img[idx].cpu().numpy())).astype(np.uint8)
     token = tokens[idx].clone().cpu().numpy()
     start = token[:1]
-    print(f'lab: {token}')
+    print(f'\nlab token: {token}')
     img_lab, flag = tokenizer.visualization(img[:], token)
     
     if flag == False:
@@ -191,7 +191,7 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
     if preds != None:
         pred = torch.argmax(preds[idx], dim=-1).clone().cpu().numpy()
         pred = np.concatenate([start, pred], axis=0)
-        print(f'pred: {pred}')
+        print(f'pred token: {pred}')
         img_pred, flag = tokenizer.visualization(img[:], pred)
         #img_pred, flag = tokenizer.visualization(img[:], token)
 
