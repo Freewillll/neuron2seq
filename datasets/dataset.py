@@ -98,6 +98,12 @@ def collate_fn(batch, max_len, pad_idx):
 
     seq_batch = pad_sequence(
         seq_batch, padding_value=pad_idx, batch_first=True)
+    for i in range(seq_batch.size(0)):
+        idx = (seq_batch[i] == pad_idx).nonzero(as_tuple=True)[0]
+        if len(idx) != 0:
+            idx = idx[0]
+            seq_batch[i][idx] = pad_idx - 1
+
     if max_len:
         pad = torch.ones(seq_batch.size(0), max_len -
                          seq_batch.size(1)).fill_(pad_idx).long()

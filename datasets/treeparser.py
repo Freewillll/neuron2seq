@@ -51,106 +51,106 @@ def trim_out_of_box(tree_orig, imgshape, keep_candidate_points=True):
 
 
 def swc_to_seq(tree, imgshape, max_level=1, p_idx=-2):
-        pos_dict = {}
-        poses_list = []
-        labels_list = []
-        level_dict = defaultdict(list)
-        roots = []
-        for i, leaf in enumerate(tree):
-            pos_dict[leaf[0]] = leaf
+    pos_dict = {}
+    poses_list = []
+    labels_list = []
+    level_dict = defaultdict(list)
+    roots = []
+    for i, leaf in enumerate(tree):
+        pos_dict[leaf[0]] = leaf
 
-        for i, leaf in enumerate(tree):
-            if leaf[p_idx] not in pos_dict:
-                roots.append(leaf[0])
+    for i, leaf in enumerate(tree):
+        if leaf[p_idx] not in pos_dict:
+            roots.append(leaf[0])
 
-        def dfs(idx, level, child_dict, tree):
-            # 0 root, 1 branching point, 2 tip node, 3 boundary point, 4 other node
-            leaf = pos_dict[idx]
-            x, y, z, r = leaf[2:6]
-            tag = 4
-            if idx not in child_dict:
-                *_, ib = leaf
-                if idx in roots:
-                    tag = 0
-                elif ib == 1:
-                    tag = 2
-                    level += 1
-                elif ib == 0:
-                    tag = 3
-                    level += 1
+    def dfs(idx, level, child_dict, tree):
+        # 0 root, 1 branching point, 2 tip node, 3 boundary point, 4 other node
+        leaf = pos_dict[idx]
+        x, y, z, r = leaf[2:6]
+        tag = 4
+        if idx not in child_dict:
+            *_, ib = leaf
+            if idx in roots:
+                tag = 0
+            elif ib == 1:
+                tag = 2
+                level += 1
+            elif ib == 0:
+                tag = 3
+                level += 1
 
-                if tag == 0 or tag == 2 or tag == 3:
-                    level_dict[level].append(idx)
-                if idx in roots:
-                    tree.create_node(tag=tag, identifier=idx, data=(z, y, x))
-                else:
-                    tree.create_node(tag=tag, identifier=idx, parent=leaf[p_idx], data=(z, y, x))
-                return
+            if tag == 0 or tag == 2 or tag == 3:
+                level_dict[level].append(idx)
+            if idx in roots:
+                tree.create_node(tag=tag, identifier=idx, data=(z, y, x))
             else:
-                cnum = len(child_dict[idx])
-                if idx in roots:
-                    tag = 0
-                elif cnum == 1:
-                    tag = 4
-                elif cnum >= 2:
-                    tag = 1
-                    level += 1
+                tree.create_node(tag=tag, identifier=idx, parent=leaf[p_idx], data=(z, y, x))
+            return
+        else:
+            cnum = len(child_dict[idx])
+            if idx in roots:
+                tag = 0
+            elif cnum == 1:
+                tag = 4
+            elif cnum >= 2:
+                tag = 1
+                level += 1
 
-                if tag == 0 or tag == 1:
-                    level_dict[level].append(idx)
-                if idx in roots:
-                    tree.create_node(tag=tag, identifier=idx, data=(z, y, x))
-                else:
-                    tree.create_node(tag=tag, identifier=idx, parent=leaf[p_idx], data=(z, y, x))
-                for cidx in child_dict[idx]:
-                    dfs(cidx, level, child_dict, tree)
+            if tag == 0 or tag == 1:
+                level_dict[level].append(idx)
+            if idx in roots:
+                tree.create_node(tag=tag, identifier=idx, data=(z, y, x))
+            else:
+                tree.create_node(tag=tag, identifier=idx, parent=leaf[p_idx], data=(z, y, x))
+            for cidx in child_dict[idx]:
+                dfs(cidx, level, child_dict, tree)
 
-        Trees = []
-        child_dict = get_child_dict(tree, p_idx_in_leaf=p_idx)
+    Trees = []
+    child_dict = get_child_dict(tree, p_idx_in_leaf=p_idx)
 
-        for idx in roots:
-            tree = Tree()
-            poses = []
-            labels = []
-            dfs(idx, 0, child_dict, tree)
-            sorted(level_dict)
-            for key in level_dict:
-                if key <= max_level:
-                    for idx in level_dict[key]:
-                        pos = []
-                        node = tree.get_node(idx)
-                        if node.tag == 3:
-                            par = node._predecessor[node._initial_tree_id]
-                            par_node = tree.get_node(par)
-                            pos = par_node.data
-                            label = node.tag
-                        elif node.tag == 0:
-                            pos = node.data
-                            label = node.tag
-                            idx, _, x, y, z, *_, par, ib = pos_dict[idx]
-                            if ib == 0:
-                                pos = tree.children(idx)[0].data
-                        else:
-                            pos = node.data
-                            label = node.tag
-                            
-                        z, y, x = pos
-                        poses.append([z, y, x])
-                        labels.append(label)
+    for idx in roots:
+        tree = Tree()
+        poses = []
+        labels = []
+        dfs(idx, 0, child_dict, tree)
+        sorted(level_dict)
+        for key in level_dict:
+            if key <= max_level:
+                for idx in level_dict[key]:
+                    pos = []
+                    node = tree.get_node(idx)
+                    if node.tag == 3:
+                        par = node._predecessor[node._initial_tree_id]
+                        par_node = tree.get_node(par)
+                        pos = par_node.data
+                        label = node.tag
+                    elif node.tag == 0:
+                        pos = node.data
+                        label = node.tag
+                        idx, _, x, y, z, *_, par, ib = pos_dict[idx]
+                        if ib == 0:
+                            pos = tree.children(idx)[0].data
+                    else:
+                        pos = node.data
+                        label = node.tag
+                        
+                    z, y, x = pos
+                    poses.append([z, y, x])
+                    labels.append(label)
 
-            poses_list.append(poses)
-            labels_list.append(labels)
-            Trees.append(tree)
-            level_dict.clear()
+        poses_list.append(poses)
+        labels_list.append(labels)
+        Trees.append(tree)
+        level_dict.clear()
 
-        max_len = 0
-        max_idx = 0
-        for idx, lab in enumerate(labels_list):
-            if len(lab) >= max_len:
-                max_idx = idx
-                max_len = len(lab)
-            
-        return poses_list[max_idx], labels_list[max_idx]
+    max_len = 0
+    max_idx = 0
+    for idx, lab in enumerate(labels_list):
+        if len(lab) >= max_len:
+            max_idx = idx
+            max_len = len(lab)
+        
+    return poses_list[max_idx], labels_list[max_idx]
 
 
 if __name__ == '__main__':

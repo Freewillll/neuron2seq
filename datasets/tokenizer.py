@@ -64,7 +64,7 @@ class Tokenizer:
             tokens.append(label)
 
             tokenized.extend(list(map(int, tokens)))
-        tokenized.append(self.EOS_code)
+        #tokenized.append(self.EOS_code)
 
         return tokenized    
     
@@ -79,7 +79,8 @@ class Tokenizer:
             end = token_list.index(self.EOS_code)
             tokens = tokens[1:end]
         else:
-            return None, None, False
+            tokens = tokens[1:]
+            #return None, None, False
 
         if len(tokens) % 4 != 0 or len(tokens) == 0:
             return None, None, False
@@ -104,8 +105,8 @@ class Tokenizer:
     @torch.no_grad()
     def visualization(self, img, token):
         img = np.repeat(img, 3, axis=0)
-        img[0, :, :, :] = 0
-        img[2, :, :, :] = 0
+        #img[0, :, :, :] = 0
+        #img[2, :, :, :] = 0
 
         labels, poses, flag = self.decode(token)
         if flag == False:
@@ -115,14 +116,14 @@ class Tokenizer:
         poses = np.clip(poses, 0, max_boundary)
 
         for idx, node in enumerate(poses):
-            if labels[idx] == 0: # root white
-                img[:, node[0], node[1], node[2]] = 255
-            elif labels[idx] == 1: # branching point yellow
-                img[0, node[0], node[1], node[2]] = 255
-            elif labels[idx] == 2: # tip blue
-                img[2, node[0], node[1], node[2]] = 255
-            elif labels[idx] == 3: #boundary blue
-                img[2, node[0], node[1], node[2]] = 255
+            if labels[idx] == 0: # root
+                img[:, node[0], node[1], node[2]] = [255,0,255]
+            elif labels[idx] == 1: # branching point 
+                img[:, node[0], node[1], node[2]] = [255,0,0]
+            elif labels[idx] == 2: # tip
+                img[:, node[0], node[1], node[2]] = [0,255,0]
+            elif labels[idx] == 3: #boundary
+                img[:, node[0], node[1], node[2]] = [0,0,255]
 
         selem = np.ones((1,1,3,3), dtype=np.uint8)
         img = morphology.dilation(img, selem)

@@ -156,7 +156,7 @@ class WarmupCosineSchedule(LambdaLR):
     
 
 @torch.no_grad()
-def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx, args, mip=True): 
+def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx, args, mip=False): 
     """
         Image Shape: b, c, z, y, x
         Tokens Shape: b, l
@@ -168,7 +168,7 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
     img = (unnormalize_normal(img[idx].cpu().numpy())).astype(np.uint8)
     token = tokens[idx].clone().cpu().numpy()
     start = token[:1]
-    print(f'\nlab token: {token}')
+    print(f'\n lab token: {token}')
     img_lab, flag = tokenizer.visualization(img[:], token)
     
     if flag == False:
@@ -213,7 +213,11 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
         # also original image
         sx = img_lab_save.shape[-1]
         img_save = np.hstack((img_orig.reshape(-1,sx), img_lab_save.reshape(-1,sx), 
-                              img_pred_save.reshape(-1,sx))).reshape(3,-1,3*sx)
+                              img_pred_save.reshape(-1,sx)))
+        if mip:
+            img_save = img_save.reshape(3,-1,3*sx)
+        else:
+            img_save = img_save.reshape(3,img_lab_save.shape[1],-1,3*sx)
         save_image(os.path.join(args.save_folder, out_pred_file), img_save)
 
 
