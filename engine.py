@@ -76,7 +76,7 @@ def train_epoch(model, tokenizer, train_loader, optimizer, lr_scheduler, criteri
         if debug:
             if saved < args.num_debug_save:
                 saved += 1
-                save_image_debug(tokenizer, img_files, img, seq, preds, epoch, 'train', 0, args)
+                save_image_debug(tokenizer, img_files[0], img[0], seq[0], preds[0], epoch, 'train', args.save_folder)
 
     return loss_meter.avg
 
@@ -109,7 +109,7 @@ def valid_epoch(model, tokenizer, valid_loader, criterion, epoch, args, debug):
             if debug:
                 if saved < args.num_debug_save:
                     saved += 1
-                    save_image_debug(tokenizer, img_files, img, seq, preds, epoch, 'val', 0, args)
+                    save_image_debug(tokenizer, img_files[0], img[0], seq[0], preds[0], epoch, 'val', args.save_folder)
     
     return loss_meter.avg
 

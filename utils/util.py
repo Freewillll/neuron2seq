@@ -156,17 +156,21 @@ class WarmupCosineSchedule(LambdaLR):
     
 
 @torch.no_grad()
-def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx, args, mip=False): 
+def save_image_debug(tokenizer, img_file, img, token, pred, epoch, phase, save_folder, mip=False, cpu=False): 
     """
         Image Shape: b, c, z, y, x
         Tokens Shape: b, l
     """ 
     
-    img_file = img_files[idx]
     prefix = get_file_prefix(img_file)
 
-    img = (unnormalize_normal(img[idx].cpu().numpy())).astype(np.uint8)
-    token = tokens[idx].clone().cpu().numpy()
+    if not cpu:
+        img = img.cpu().numpy()
+        token = token.clone().cpu().numpy()
+        pred = torch.argmax(pred, dim=-1).clone().cpu().numpy()
+
+
+    img = (unnormalize_normal(img)).astype(np.uint8)
     start = token[:1]
     print(f'\n lab token: {token}')
     img_lab, flag = tokenizer.visualization(img[:], token)
@@ -176,49 +180,43 @@ def save_image_debug(tokenizer, img_files, img, tokens, preds, epoch, phase, idx
     
     if mip:
         fmt = 'png'
+        img_orig = np.repeat(get_mip_image(img, 1, mode='MAX'), 3, axis=0)
         img_lab_save = get_mip_image(img_lab, 1, mode='MAX')
     else:
         fmt = 'v3draw'
+        img_orig = np.repeat(img, 3, axis=0)
         img_lab_save = img_lab
 
-    if phase == 'train':
-        out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.{fmt}'
-    else:
-        out_lab_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.{fmt}'
-        
-    #save_image(os.path.join(args.save_folder, out_lab_file), img_lab_save)
+    out_file = f'debug_epoch{epoch}_{prefix}_{phase}_lab.{fmt}'
+    sz,sy,sx = img.shape[1:4]
+    img_save = np.hstack((img_orig.reshape(-1,sx), img_lab_save.reshape(-1,sx)))
+    k = 2
+
         
     if preds != None:
-        pred = torch.argmax(preds[idx], dim=-1).clone().cpu().numpy()
         pred = np.concatenate([start, pred], axis=0)
         print(f'pred token: {pred}')
         img_pred, flag = tokenizer.visualization(img[:], pred)
-        #img_pred, flag = tokenizer.visualization(img[:], token)
 
         if flag == False:
             return 
 
         if mip:
-            img_pred_save = get_mip_image(img_pred, 1, mode='MAX')
-            img_orig = np.repeat(get_mip_image(img, 1, mode='MAX'), 3, axis=0)
-        else:
-            img_pred_save = img_pred
-            img_orig = np.repeat(img, 3, axis=0)
+            img_pred = get_mip_image(img_pred, 1, mode='MAX')
 
-        if phase == 'train':
-            out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.{fmt}'
-        else:
-            out_pred_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.{fmt}'
+        out_file = f'debug_epoch{epoch}_{prefix}_{phase}_pred.{fmt}'
 
         # also original image
-        sx = img_lab_save.shape[-1]
-        img_save = np.hstack((img_orig.reshape(-1,sx), img_lab_save.reshape(-1,sx), 
-                              img_pred_save.reshape(-1,sx)))
-        if mip:
-            img_save = img_save.reshape(3,-1,3*sx)
-        else:
-            img_save = img_save.reshape(3,img_lab_save.shape[1],-1,3*sx)
-        save_image(os.path.join(args.save_folder, out_pred_file), img_save)
+        img_save = np.hstack((img_save, img_pred.reshape(-1,sx)))
+        k = 3
+
+    if mip:
+        img_save = img_save.reshape(3,img_orig.shape[1],k*sx)
+    else:
+        img_save = img_save.reshape(3,img_orig.shape[1],img_orig.shape[2],k*sx)
+
+    
+    save_image(os.path.join(save_folder, out_file), img_save)
 
 
 @torch.no_grad()

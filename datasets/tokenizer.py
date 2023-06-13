@@ -105,6 +105,7 @@ class Tokenizer:
     @torch.no_grad()
     def visualization(self, img, token):
         img = np.repeat(img, 3, axis=0)
+        img[:,:,:,:] = 0
         #img[0, :, :, :] = 0
         #img[2, :, :, :] = 0
 

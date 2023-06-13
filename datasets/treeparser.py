@@ -50,7 +50,7 @@ def trim_out_of_box(tree_orig, imgshape, keep_candidate_points=True):
     return tree
 
 
-def swc_to_seq(tree, imgshape, max_level=1, p_idx=-2):
+def swc_to_seq(tree, imgshape, max_level=1, p_idx=-2): 
     pos_dict = {}
     poses_list = []
     labels_list = []

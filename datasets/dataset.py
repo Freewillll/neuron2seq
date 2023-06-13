@@ -155,29 +155,28 @@ if __name__ == '__main__':
     # import matplotlib.pyplot as plt
     from utils.image_util import *
     from datasets.tokenizer import Tokenizer
-    # from datasets.mip import *
-    # from train import *
 
-    split_file = '/PBshare/SEU-ALLEN/Users/Gaoyu/Neuron_dataset/Task002_ntt_256/data_splits.pkl'
+    split_file = '/home/lyf/Research/auto_trace/neuron2seq/data/Task002_ntt_256/debug_nsample16.pkl'
     idx = 1
     imgshape = (32, 64, 64)
+    print('Defined the variables')
 
     tokenizer = Tokenizer(num_classes=4, num_bins=64, depth=32,
                           width=64, height=64, max_len=3)
+    print('initialized tokenizer')
 
     dataset = GenericDataset(split_file, tokenizer, 'train', imgshape=imgshape)
 
     loader = tudata.DataLoader(dataset, 4, 
                                 num_workers=4, 
-                                shuffle=False, pin_memory=True,
+                                shuffle=False, pin_memory=False,
                                 drop_last=True, 
                                 collate_fn=partial(collate_fn, max_len=0, pad_idx=tokenizer.PAD_code),
                                 worker_init_fn=util.worker_init_fn)
+    print(len(dataset))
 
     for i, batch in enumerate(loader):
-        img, seqs, imgfile, swcfile = batch
+        imgs, seqs, imgfiles, swcfiles = batch
         print(seqs)
-        break
-        # print(targets.shape)
-        # save_image_in_training(imgfiles, img, seq, cls_, pred=None, phase='train', epoch=1, idx=0)
+        save_image_debug(tokenizer, imgfile[0], img[0], seq[0], None, epoch=0, phase='train', save_folder='', cpu=True)
 
